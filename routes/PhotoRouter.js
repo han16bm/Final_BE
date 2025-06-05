@@ -75,6 +75,29 @@ router.post('/photos/new', verifyToken, upload.single('file'), async function(re
     console.log(error);
   }
 });
+router.put("/:photoId/comment/:commentId", verifyToken, async (req, res) => {
+  const { photoId, commentId } = req.params;
+  const { newComment } = req.body;
+  const userId = req.user_id; 
 
+  try {
+    const photo = await Photo.findById(photoId);
+    if (!photo) return res.status(404).json({ message: "Photo not found" });
+
+    const comment = photo.comments.id(commentId);
+    if (!comment) return res.status(404).json({ message: "Comment not found" });
+
+   
+    if (comment.user_id.toString() !== userId) {
+      return res.status(403).json({ message: "Permission denied" });
+    }
+
+    comment.comment = newComment;
+    await photo.save();
+    res.json({ message: "Comment updated" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
 module.exports = router;
